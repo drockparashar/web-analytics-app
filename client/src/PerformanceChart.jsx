@@ -1,4 +1,3 @@
-// PerformanceChart.js
 import React from 'react';
 import { Line, Bar } from 'react-chartjs-2';
 import {
@@ -18,7 +17,6 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarEleme
 const PerformanceChart = ({ data }) => {
   const { pageLoadTime, ttfb, fcp, lcp, tbt, cls, totalRequestSize, numberOfRequests } = data;
 
-  // Line Chart Data for overall metrics
   const lineChartData = {
     labels: ['Page Load Time', 'TTFB', 'FCP', 'LCP'],
     datasets: [
@@ -32,7 +30,6 @@ const PerformanceChart = ({ data }) => {
     ],
   };
 
-  // Bar Chart Data for TBT
   const tbtChartData = {
     labels: ['Total Blocking Time'],
     datasets: [
@@ -46,7 +43,6 @@ const PerformanceChart = ({ data }) => {
     ],
   };
 
-  // Bar Chart Data for CLS
   const clsChartData = {
     labels: ['Cumulative Layout Shift'],
     datasets: [
@@ -60,7 +56,6 @@ const PerformanceChart = ({ data }) => {
     ],
   };
 
-  // Bar Chart Data for Total Request Size
   const totalRequestSizeChartData = {
     labels: ['Total Request Size'],
     datasets: [
@@ -74,7 +69,6 @@ const PerformanceChart = ({ data }) => {
     ],
   };
 
-  // Bar Chart Data for Number of Requests
   const numberOfRequestsChartData = {
     labels: ['Number of Requests'],
     datasets: [
@@ -100,25 +94,7 @@ const PerformanceChart = ({ data }) => {
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div>
-          <h3 className="text-xl font-semibold mb-2 text-gray-700">Total Blocking Time</h3>
-          <div className="bg-gray-100 p-4 rounded-lg">
-            <Bar data={tbtChartData} />
-          </div>
-          <p className="mt-2 text-gray-600">
-            <strong>Total Blocking Time (TBT):</strong> Measures the total amount of time that the main thread was blocked and unable to respond to user input. 
-          </p>
-        </div>
-
-        <div>
-          <h3 className="text-xl font-semibold mb-2 text-gray-700">Cumulative Layout Shift</h3>
-          <div className="bg-gray-100 p-4 rounded-lg">
-            <Bar data={clsChartData} />
-          </div>
-          <p className="mt-2 text-gray-600">
-            <strong>Cumulative Layout Shift (CLS):</strong> Measures the sum of all individual layout shift scores for every unexpected layout shift that occurs during the entire lifespan of the page.
-          </p>
-        </div>
+       
 
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">Total Request Size</h3>
@@ -137,6 +113,26 @@ const PerformanceChart = ({ data }) => {
           </div>
           <p className="mt-2 text-gray-600">
             <strong>Number of Requests:</strong> Indicates the total number of network requests made by the page.
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-xl font-semibold mb-2 text-gray-700">Total Blocking Time</h3>
+          <div className="bg-gray-100 p-4 rounded-lg">
+            <Bar data={tbtChartData} />
+          </div>
+          <p className="mt-2 text-gray-600">
+            <strong>Total Blocking Time (TBT):</strong> Measures the total amount of time that the main thread was blocked and unable to respond to user input. 
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-xl font-semibold mb-2 text-gray-700">Cumulative Layout Shift</h3>
+          <div className="bg-gray-100 p-4 rounded-lg">
+            <Bar data={clsChartData} />
+          </div>
+          <p className="mt-2 text-gray-600">
+            <strong>Cumulative Layout Shift (CLS):</strong> Measures the sum of all individual layout shift scores for every unexpected layout shift that occurs during the entire lifespan of the page.
           </p>
         </div>
       </div>

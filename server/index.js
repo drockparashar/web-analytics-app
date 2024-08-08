@@ -1,14 +1,11 @@
 import express from 'express';
-// import axios from 'axios';
 import cors from 'cors';
-import compression from 'compression';
-import analyzePerformance from './analyze.js'; // Adjust the path as needed
+import analyzePerformance from './analyze.js'; 
 
 const app = express();
 const PORT = 3002;
 
 app.use(cors());
-app.use(compression());
 app.use(express.json());
 
 app.post('/analyze', async (req, res) => {
