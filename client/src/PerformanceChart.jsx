@@ -15,6 +15,16 @@ import {
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
 const PerformanceChart = ({ data, scores }) => {
+  // Helper to format bytes to KB/MB
+  const formatBytes = (bytes) => {
+    if (bytes === null || bytes === undefined) return 'N/A';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  // Helper to format numbers (e.g., requests)
+  const formatNumber = (num) => num !== null && num !== undefined ? num : 'N/A';
   // Defensive: fallback to empty object if data is undefined
   // Helper to format ms to seconds with 2 decimals
   const formatSeconds = (ms) => ms !== null && ms !== undefined ? `${(ms / 1000).toFixed(2)} s` : 'N/A';
@@ -130,7 +140,7 @@ const PerformanceChart = ({ data, scores }) => {
             <Bar data={totalRequestSizeChartData} />
           </div>
           <p className="mt-2 text-gray-600">
-            <strong>Total Request Size:</strong> Represents the total size of all network requests made by the page.
+            <strong>Total Request Size:</strong> {formatBytes(totalRequestSize)}. Represents the total size of all network requests made by the page.
           </p>
         </div>
 
@@ -140,7 +150,7 @@ const PerformanceChart = ({ data, scores }) => {
             <Bar data={numberOfRequestsChartData} />
           </div>
           <p className="mt-2 text-gray-600">
-            <strong>Number of Requests:</strong> Indicates the total number of network requests made by the page.
+            <strong>Number of Requests:</strong> {formatNumber(numberOfRequests)}. Indicates the total number of network requests made by the page.
           </p>
         </div>
 
@@ -150,7 +160,7 @@ const PerformanceChart = ({ data, scores }) => {
             <Bar data={tbtChartData} />
           </div>
           <p className="mt-2 text-gray-600">
-            <strong>Total Blocking Time (TBT):</strong> Measures the total amount of time that the main thread was blocked and unable to respond to user input.
+            <strong>Total Blocking Time (TBT):</strong> {formatSeconds(tbt)}. Measures the total amount of time that the main thread was blocked and unable to respond to user input.
           </p>
         </div>
 
@@ -160,7 +170,7 @@ const PerformanceChart = ({ data, scores }) => {
             <Bar data={clsChartData} />
           </div>
           <p className="mt-2 text-gray-600">
-            <strong>Cumulative Layout Shift (CLS):</strong> Measures the sum of all individual layout shift scores for every unexpected layout shift that occurs during the entire lifespan of the page.
+            <strong>Cumulative Layout Shift (CLS):</strong> {cls !== null && cls !== undefined ? cls.toFixed(2) : 'N/A'}. Measures the sum of all individual layout shift scores for every unexpected layout shift that occurs during the entire lifespan of the page.
           </p>
         </div>
 
