@@ -176,8 +176,14 @@ const PerformanceChart = ({ data, scores }) => {
     labels: ['Total Request Size'],
     datasets: [
       {
-        label: 'Request Size (KB)',
-        data: [totalRequestSize / 1024],
+        label: 'Request Size',
+        data: [
+          totalRequestSize !== null && totalRequestSize !== undefined
+            ? totalRequestSize < 1024 * 1024
+              ? Number((totalRequestSize / 1024).toFixed(2))
+              : Number((totalRequestSize / (1024 * 1024)).toFixed(2))
+            : 0
+        ],
         backgroundColor: 'rgba(255,206,86,0.2)',
         borderColor: 'rgba(255,206,86,1)',
         borderWidth: 1,
@@ -190,7 +196,12 @@ const PerformanceChart = ({ data, scores }) => {
       y: {
         title: {
           display: true,
-          text: 'Size (KB)'
+          text:
+            totalRequestSize !== null && totalRequestSize !== undefined
+              ? totalRequestSize < 1024 * 1024
+                ? 'Size (KB)'
+                : 'Size (MB)'
+              : 'Size'
         }
       },
       x: {
@@ -201,6 +212,8 @@ const PerformanceChart = ({ data, scores }) => {
       }
     }
   };
+
+  // ...existing code...
 
   const numberOfRequestsChartData = {
     labels: ['Number of Requests'],
@@ -249,6 +262,7 @@ const PerformanceChart = ({ data, scores }) => {
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">Total Request Size</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
+            {/* Ensure options variable is defined above and used here */}
             <Bar data={totalRequestSizeChartData} options={totalRequestSizeChartOptions} />
           </div>
           <p className="mt-2 text-gray-600">
