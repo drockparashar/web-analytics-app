@@ -24,7 +24,7 @@ const PerformanceChart = ({ data, scores }) => {
   };
 
   // Helper to format numbers (e.g., requests)
-  const formatNumber = (num) => num !== null && num !== undefined ? num : 'N/A';
+  const formatNumber = (num) => num !== null && num !== undefined ? Number(num).toFixed(2) : 'N/A';
   // Defensive: fallback to empty object if data is undefined
   // Helper to format ms to seconds with 2 decimals
   const formatSeconds = (ms) => ms !== null && ms !== undefined ? `${(ms / 1000).toFixed(2)} s` : 'N/A';
@@ -170,7 +170,7 @@ const PerformanceChart = ({ data, scores }) => {
             <Bar data={clsChartData} />
           </div>
           <p className="mt-2 text-gray-600">
-            <strong>Cumulative Layout Shift (CLS):</strong> {cls !== null && cls !== undefined ? cls.toFixed(2) : 'N/A'}. Measures the sum of all individual layout shift scores for every unexpected layout shift that occurs during the entire lifespan of the page.
+            <strong>Cumulative Layout Shift (CLS):</strong> {formatNumber(cls)}. Measures the sum of all individual layout shift scores for every unexpected layout shift that occurs during the entire lifespan of the page.
           </p>
         </div>
 
