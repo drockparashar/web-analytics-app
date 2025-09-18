@@ -59,8 +59,8 @@ const PerformanceChart = ({ data, scores }) => {
     labels: ['Page Load Time', 'TTFB', 'FCP', 'LCP'],
     datasets: [
       {
-        label: 'Metrics (ms)',
-        data: [pageLoadTime, ttfb, fcp, lcp],
+        label: 'Metrics (s)',
+        data: [pageLoadTime / 1000, ttfb / 1000, fcp / 1000, lcp / 1000],
         borderColor: 'rgba(75,192,192,1)',
         backgroundColor: 'rgba(75,192,192,0.2)',
         fill: true,
@@ -68,17 +68,51 @@ const PerformanceChart = ({ data, scores }) => {
     ],
   };
 
+  const lineChartOptions = {
+    scales: {
+      y: {
+        title: {
+          display: true,
+          text: 'Time (s)'
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Metric'
+        }
+      }
+    }
+  };
+
   const tbtChartData = {
     labels: ['Total Blocking Time'],
     datasets: [
       {
-        label: 'TBT (ms)',
-        data: [tbt],
+        label: 'TBT (s)',
+        data: [tbt / 1000],
         backgroundColor: 'rgba(255,99,132,0.2)',
         borderColor: 'rgba(255,99,132,1)',
         borderWidth: 1,
       },
     ],
+  };
+
+  const tbtChartOptions = {
+    scales: {
+      y: {
+        title: {
+          display: true,
+          text: 'Time (s)'
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Metric'
+        }
+      }
+    }
   };
 
   const clsChartData = {
@@ -94,17 +128,51 @@ const PerformanceChart = ({ data, scores }) => {
     ],
   };
 
+  const clsChartOptions = {
+    scales: {
+      y: {
+        title: {
+          display: true,
+          text: 'Score'
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Metric'
+        }
+      }
+    }
+  };
+
   const totalRequestSizeChartData = {
     labels: ['Total Request Size'],
     datasets: [
       {
-        label: 'Request Size (Bytes)',
-        data: [totalRequestSize],
+        label: 'Request Size (KB)',
+        data: [totalRequestSize / 1024],
         backgroundColor: 'rgba(255,206,86,0.2)',
         borderColor: 'rgba(255,206,86,1)',
         borderWidth: 1,
       },
     ],
+  };
+
+  const totalRequestSizeChartOptions = {
+    scales: {
+      y: {
+        title: {
+          display: true,
+          text: 'Size (KB)'
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Metric'
+        }
+      }
+    }
   };
 
   const numberOfRequestsChartData = {
@@ -120,6 +188,23 @@ const PerformanceChart = ({ data, scores }) => {
     ],
   };
 
+  const numberOfRequestsChartOptions = {
+    scales: {
+      y: {
+        title: {
+          display: true,
+          text: 'Count'
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Metric'
+        }
+      }
+    }
+  };
+
   return (
     <div className="p-6 max-w-4xl mx-auto bg-white shadow-lg rounded-lg">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">Performance Metrics</h2>
@@ -129,7 +214,7 @@ const PerformanceChart = ({ data, scores }) => {
       <div className="mb-8">
         <h3 className="text-xl font-semibold mb-2 text-gray-700">Overall Metrics</h3>
         <div className="bg-gray-100 p-4 rounded-lg">
-          <Line data={lineChartData} />
+          <Line data={lineChartData} options={lineChartOptions} />
         </div>
       </div>
 
@@ -137,7 +222,7 @@ const PerformanceChart = ({ data, scores }) => {
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">Total Request Size</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
-            <Bar data={totalRequestSizeChartData} />
+            <Bar data={totalRequestSizeChartData} options={totalRequestSizeChartOptions} />
           </div>
           <p className="mt-2 text-gray-600">
             <strong>Total Request Size:</strong> {formatBytes(totalRequestSize)}. Represents the total size of all network requests made by the page.
@@ -147,7 +232,7 @@ const PerformanceChart = ({ data, scores }) => {
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">Number of Requests</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
-            <Bar data={numberOfRequestsChartData} />
+            <Bar data={numberOfRequestsChartData} options={numberOfRequestsChartOptions} />
           </div>
           <p className="mt-2 text-gray-600">
             <strong>Number of Requests:</strong> {formatNumber(numberOfRequests)}. Indicates the total number of network requests made by the page.
@@ -157,7 +242,7 @@ const PerformanceChart = ({ data, scores }) => {
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">Total Blocking Time</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
-            <Bar data={tbtChartData} />
+            <Bar data={tbtChartData} options={tbtChartOptions} />
           </div>
           <p className="mt-2 text-gray-600">
             <strong>Total Blocking Time (TBT):</strong> {formatSeconds(tbt)}. Measures the total amount of time that the main thread was blocked and unable to respond to user input.
@@ -167,7 +252,7 @@ const PerformanceChart = ({ data, scores }) => {
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">Cumulative Layout Shift</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
-            <Bar data={clsChartData} />
+            <Bar data={clsChartData} options={clsChartOptions} />
           </div>
           <p className="mt-2 text-gray-600">
             <strong>Cumulative Layout Shift (CLS):</strong> {formatNumber(cls)}. Measures the sum of all individual layout shift scores for every unexpected layout shift that occurs during the entire lifespan of the page.
