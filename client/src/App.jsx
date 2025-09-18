@@ -20,12 +20,16 @@ const App = () => {
 
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await axios.post('http://localhost:3002/analyze', { url });
       setPerformanceData(response.data);
     } catch (err) {
-      setError('Error fetching performance data.');
+      let errorMsg = 'Error fetching performance data.';
+      if (err.response && err.response.data && err.response.data.error) {
+        errorMsg += `\n${err.response.data.error}`;
+      }
+      setError(errorMsg);
       console.error('Error fetching performance data:', err);
     } finally {
       setLoading(false);
@@ -35,7 +39,7 @@ const App = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center justify-center">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">SpeedX</h1>
-      
+
       <div className="bg-white p-6 shadow-lg rounded-lg w-full max-w-md">
         <h2 className="text-xl font-semibold mb-4 text-gray-700">Enter Website URL</h2>
         <input

@@ -14,6 +14,7 @@ app.post('/analyze', async (req, res) => {
         const performanceData = await analyzePerformance(url);
         res.json(performanceData);
     } catch (error) {
+        console.log(error);
         res.status(500).json({ error: error.message });
     }
 });
