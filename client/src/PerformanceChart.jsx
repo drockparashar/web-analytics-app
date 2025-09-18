@@ -14,8 +14,33 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
-const PerformanceChart = ({ data }) => {
-  const { pageLoadTime, ttfb, fcp, lcp, tbt, cls, totalRequestSize, numberOfRequests } = data;
+const PerformanceChart = ({ data, scores }) => {
+  // Defensive: fallback to empty object if data is undefined
+  const {
+    pageLoadTime = null,
+    ttfb = null,
+    fcp = null,
+    lcp = null,
+    tbt = null,
+    cls = null,
+    totalRequestSize = null,
+    numberOfRequests = null,
+    speedIndex = null,
+    tti = null,
+    domContentLoaded = null
+  } = data || {};
+
+  // Scores section
+  const renderScores = () => (
+    <div className="mb-8 grid grid-cols-2 md:grid-cols-5 gap-4">
+      {Object.entries(scores || {}).map(([key, value]) => (
+        <div key={key} className="bg-gray-100 p-4 rounded-lg text-center">
+          <div className="text-sm text-gray-500 font-semibold mb-1">{key}</div>
+          <div className="text-xl font-bold text-gray-800">{value !== null ? value : 'N/A'}</div>
+        </div>
+      ))}
+    </div>
+  );
 
   const lineChartData = {
     labels: ['Page Load Time', 'TTFB', 'FCP', 'LCP'],
@@ -85,7 +110,9 @@ const PerformanceChart = ({ data }) => {
   return (
     <div className="p-6 max-w-4xl mx-auto bg-white shadow-lg rounded-lg">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">Performance Metrics</h2>
-      
+      {/* Lighthouse Scores */}
+      {scores && renderScores()}
+
       <div className="mb-8">
         <h3 className="text-xl font-semibold mb-2 text-gray-700">Overall Metrics</h3>
         <div className="bg-gray-100 p-4 rounded-lg">
@@ -94,15 +121,13 @@ const PerformanceChart = ({ data }) => {
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-       
-
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">Total Request Size</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
             <Bar data={totalRequestSizeChartData} />
           </div>
           <p className="mt-2 text-gray-600">
-            <strong>Total Request Size:</strong> Represents the total size of all network requests made by the page. 
+            <strong>Total Request Size:</strong> Represents the total size of all network requests made by the page.
           </p>
         </div>
 
@@ -122,7 +147,7 @@ const PerformanceChart = ({ data }) => {
             <Bar data={tbtChartData} />
           </div>
           <p className="mt-2 text-gray-600">
-            <strong>Total Blocking Time (TBT):</strong> Measures the total amount of time that the main thread was blocked and unable to respond to user input. 
+            <strong>Total Blocking Time (TBT):</strong> Measures the total amount of time that the main thread was blocked and unable to respond to user input.
           </p>
         </div>
 
@@ -135,9 +160,54 @@ const PerformanceChart = ({ data }) => {
             <strong>Cumulative Layout Shift (CLS):</strong> Measures the sum of all individual layout shift scores for every unexpected layout shift that occurs during the entire lifespan of the page.
           </p>
         </div>
+
+        {/* Additional Metrics */}
+        <div>
+          <h3 className="text-xl font-semibold mb-2 text-gray-700">Speed Index</h3>
+          <div className="bg-gray-100 p-4 rounded-lg">
+            <span className="text-lg font-bold">{speedIndex ?? 'N/A'}</span>
+          </div>
+          <p className="mt-2 text-gray-600">
+            <strong>Speed Index:</strong> Shows how quickly the contents of a page are visibly populated.
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-xl font-semibold mb-2 text-gray-700">Time to Interactive (TTI)</h3>
+          <div className="bg-gray-100 p-4 rounded-lg">
+            <span className="text-lg font-bold">{tti ?? 'N/A'}</span>
+          </div>
+          <p className="mt-2 text-gray-600">
+            <strong>TTI:</strong> The time it takes for the page to become fully interactive.
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-xl font-semibold mb-2 text-gray-700">DOM Content Loaded</h3>
+          <div className="bg-gray-100 p-4 rounded-lg">
+            <span className="text-lg font-bold">{domContentLoaded ?? 'N/A'}</span>
+          </div>
+          <p className="mt-2 text-gray-600">
+            <strong>DOM Content Loaded:</strong> Time when the DOM is fully loaded and parsed.
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-xl font-semibold mb-2 text-gray-700">Page Load Time</h3>
+          <div className="bg-gray-100 p-4 rounded-lg">
+            <span className="text-lg font-bold">{pageLoadTime ?? 'N/A'}</span>
+          </div>
+          <p className="mt-2 text-gray-600">
+            <strong>Page Load Time:</strong> Time when the page is fully loaded and interactive.
+          </p>
+        </div>
       </div>
     </div>
   );
 };
 
-export default PerformanceChart;
+// Accept scores as a prop
+export default function Wrapper(props) {
+  // If called as <PerformanceChart data={...} scores={...} />
+  return <PerformanceChart {...props} />;
+}

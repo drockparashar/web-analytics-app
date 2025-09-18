@@ -61,7 +61,7 @@ const App = () => {
       <div className="mt-8 w-full max-w-4xl">
         {loading && <p className="text-gray-600">Loading performance data...</p>}
         {error && <p className="text-red-600">{error}</p>}
-        {performanceData && <PerformanceChart data={performanceData} />}
+        {performanceData && <PerformanceChart data={performanceData.metrics} scores={performanceData.lighthouseScores} />}
       </div>
     </div>
   );
