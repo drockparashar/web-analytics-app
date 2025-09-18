@@ -16,6 +16,9 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarEleme
 
 const PerformanceChart = ({ data, scores }) => {
   // Defensive: fallback to empty object if data is undefined
+  // Helper to format ms to seconds with 2 decimals
+  const formatSeconds = (ms) => ms !== null && ms !== undefined ? `${(ms / 1000).toFixed(2)} s` : 'N/A';
+
   const {
     pageLoadTime = null,
     ttfb = null,
@@ -165,7 +168,7 @@ const PerformanceChart = ({ data, scores }) => {
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">Speed Index</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
-            <span className="text-lg font-bold">{speedIndex ?? 'N/A'}</span>
+            <span className="text-lg font-bold">{formatSeconds(speedIndex)}</span>
           </div>
           <p className="mt-2 text-gray-600">
             <strong>Speed Index:</strong> Shows how quickly the contents of a page are visibly populated.
@@ -175,7 +178,7 @@ const PerformanceChart = ({ data, scores }) => {
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">Time to Interactive (TTI)</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
-            <span className="text-lg font-bold">{tti ?? 'N/A'}</span>
+            <span className="text-lg font-bold">{formatSeconds(tti)}</span>
           </div>
           <p className="mt-2 text-gray-600">
             <strong>TTI:</strong> The time it takes for the page to become fully interactive.
@@ -185,7 +188,7 @@ const PerformanceChart = ({ data, scores }) => {
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">DOM Content Loaded</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
-            <span className="text-lg font-bold">{domContentLoaded ?? 'N/A'}</span>
+            <span className="text-lg font-bold">{formatSeconds(domContentLoaded)}</span>
           </div>
           <p className="mt-2 text-gray-600">
             <strong>DOM Content Loaded:</strong> Time when the DOM is fully loaded and parsed.
@@ -195,7 +198,7 @@ const PerformanceChart = ({ data, scores }) => {
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">Page Load Time</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
-            <span className="text-lg font-bold">{pageLoadTime ?? 'N/A'}</span>
+            <span className="text-lg font-bold">{formatSeconds(pageLoadTime)}</span>
           </div>
           <p className="mt-2 text-gray-600">
             <strong>Page Load Time:</strong> Time when the page is fully loaded and interactive.
