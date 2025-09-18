@@ -22,7 +22,8 @@ const App = () => {
     setError(null);
 
     try {
-      const response = await axios.post('http://localhost:3002/analyze', { url });
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3002';
+      const response = await axios.post(`${backendUrl}/analyze`, { url });
       setPerformanceData(response.data);
     } catch (err) {
       let errorMsg = 'Error fetching performance data.';
