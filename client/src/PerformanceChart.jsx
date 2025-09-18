@@ -15,6 +15,10 @@ import {
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
 const PerformanceChart = ({ data, scores }) => {
+  // Tooltip for N/A values
+  const naTooltip = (
+    <span title="This metric is not available for this site or could not be measured." style={{ cursor: 'help', textDecoration: 'underline dotted' }}>N/A</span>
+  );
   // Helper to format bytes to KB/MB
   const formatBytes = (bytes) => {
     if (bytes === null || bytes === undefined) return 'N/A';
@@ -25,6 +29,15 @@ const PerformanceChart = ({ data, scores }) => {
 
   // Helper to format numbers (e.g., requests)
   const formatNumber = (num) => num !== null && num !== undefined ? Number(num).toFixed(2) : 'N/A';
+  // Format with tooltip for N/A
+  const formatNumberWithTooltip = (num) => num !== null && num !== undefined ? Number(num).toFixed(2) : naTooltip;
+  const formatBytesWithTooltip = (bytes) => {
+    if (bytes === null || bytes === undefined) return naTooltip;
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+  const formatSecondsWithTooltip = (ms) => ms !== null && ms !== undefined ? `${(ms / 1000).toFixed(2)} s` : naTooltip;
   // Defensive: fallback to empty object if data is undefined
   // Helper to format ms to seconds with 2 decimals
   const formatSeconds = (ms) => ms !== null && ms !== undefined ? `${(ms / 1000).toFixed(2)} s` : 'N/A';
@@ -225,7 +238,7 @@ const PerformanceChart = ({ data, scores }) => {
             <Bar data={totalRequestSizeChartData} options={totalRequestSizeChartOptions} />
           </div>
           <p className="mt-2 text-gray-600">
-            <strong>Total Request Size:</strong> {formatBytes(totalRequestSize)}. Represents the total size of all network requests made by the page.
+            <strong>Total Request Size:</strong> {formatBytesWithTooltip(totalRequestSize)}. Represents the total size of all network requests made by the page.
           </p>
         </div>
 
@@ -235,7 +248,7 @@ const PerformanceChart = ({ data, scores }) => {
             <Bar data={numberOfRequestsChartData} options={numberOfRequestsChartOptions} />
           </div>
           <p className="mt-2 text-gray-600">
-            <strong>Number of Requests:</strong> {formatNumber(numberOfRequests)}. Indicates the total number of network requests made by the page.
+            <strong>Number of Requests:</strong> {formatNumberWithTooltip(numberOfRequests)}. Indicates the total number of network requests made by the page.
           </p>
         </div>
 
@@ -245,7 +258,7 @@ const PerformanceChart = ({ data, scores }) => {
             <Bar data={tbtChartData} options={tbtChartOptions} />
           </div>
           <p className="mt-2 text-gray-600">
-            <strong>Total Blocking Time (TBT):</strong> {formatSeconds(tbt)}. Measures the total amount of time that the main thread was blocked and unable to respond to user input.
+            <strong>Total Blocking Time (TBT):</strong> {formatSecondsWithTooltip(tbt)}. Measures the total amount of time that the main thread was blocked and unable to respond to user input.
           </p>
         </div>
 
@@ -255,7 +268,7 @@ const PerformanceChart = ({ data, scores }) => {
             <Bar data={clsChartData} options={clsChartOptions} />
           </div>
           <p className="mt-2 text-gray-600">
-            <strong>Cumulative Layout Shift (CLS):</strong> {formatNumber(cls)}. Measures the sum of all individual layout shift scores for every unexpected layout shift that occurs during the entire lifespan of the page.
+            <strong>Cumulative Layout Shift (CLS):</strong> {formatNumberWithTooltip(cls)}. Measures the sum of all individual layout shift scores for every unexpected layout shift that occurs during the entire lifespan of the page.
           </p>
         </div>
 
@@ -263,7 +276,7 @@ const PerformanceChart = ({ data, scores }) => {
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">Speed Index</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
-            <span className="text-lg font-bold">{formatSeconds(speedIndex)}</span>
+            <span className="text-lg font-bold">{formatSecondsWithTooltip(speedIndex)}</span>
           </div>
           <p className="mt-2 text-gray-600">
             <strong>Speed Index:</strong> Shows how quickly the contents of a page are visibly populated.
@@ -273,7 +286,7 @@ const PerformanceChart = ({ data, scores }) => {
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">Time to Interactive (TTI)</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
-            <span className="text-lg font-bold">{formatSeconds(tti)}</span>
+            <span className="text-lg font-bold">{formatSecondsWithTooltip(tti)}</span>
           </div>
           <p className="mt-2 text-gray-600">
             <strong>TTI:</strong> The time it takes for the page to become fully interactive.
@@ -283,7 +296,7 @@ const PerformanceChart = ({ data, scores }) => {
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">DOM Content Loaded</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
-            <span className="text-lg font-bold">{formatSeconds(domContentLoaded)}</span>
+            <span className="text-lg font-bold">{formatSecondsWithTooltip(domContentLoaded)}</span>
           </div>
           <p className="mt-2 text-gray-600">
             <strong>DOM Content Loaded:</strong> Time when the DOM is fully loaded and parsed.
@@ -293,7 +306,7 @@ const PerformanceChart = ({ data, scores }) => {
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">Page Load Time</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
-            <span className="text-lg font-bold">{formatSeconds(pageLoadTime)}</span>
+            <span className="text-lg font-bold">{formatSecondsWithTooltip(pageLoadTime)}</span>
           </div>
           <p className="mt-2 text-gray-600">
             <strong>Page Load Time:</strong> Time when the page is fully loaded and interactive.
