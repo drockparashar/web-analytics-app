@@ -59,12 +59,26 @@ const PerformanceChart = ({ data, scores }) => {
   // Scores section
   const renderScores = () => (
     <div className="mb-8 grid grid-cols-2 md:grid-cols-5 gap-4">
-      {Object.entries(scores || {}).map(([key, value]) => (
-        <div key={key} className="bg-gray-100 p-4 rounded-lg text-center">
-          <div className="text-sm text-gray-500 font-semibold mb-1">{key}</div>
-          <div className="text-xl font-bold text-gray-800">{value !== null ? value : 'N/A'}</div>
-        </div>
-      ))}
+      {Object.entries(scores || {}).map(([key, value]) => {
+        let color = 'text-gray-800';
+        let bg = 'bg-gray-100';
+        let fontSize = 'text-xl';
+        if (key === 'performance' && value !== null) {
+          if (value >= 0.9) {
+            color = 'text-green-600'; bg = 'bg-green-50'; fontSize = 'text-2xl';
+          } else if (value >= 0.5) {
+            color = 'text-yellow-600'; bg = 'bg-yellow-50'; fontSize = 'text-2xl';
+          } else {
+            color = 'text-red-600'; bg = 'bg-red-50'; fontSize = 'text-2xl';
+          }
+        }
+        return (
+          <div key={key} className={`${bg} p-4 rounded-lg text-center`}>
+            <div className="text-sm text-gray-500 font-semibold mb-1">{key}</div>
+            <div className={`${fontSize} font-bold ${color}`}>{value !== null ? value : 'N/A'}</div>
+          </div>
+        );
+      })}
     </div>
   );
 
