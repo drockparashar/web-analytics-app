@@ -17,18 +17,6 @@ export default function LandingPage() {
                         </svg>
                         <span className="text-xl font-bold text-gray-900">SpeedX</span>
                     </div>
-                    <div className="hidden md:flex items-center space-x-6">
-                        <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">
-                            Features
-                        </a>
-                        <a href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">
-                            About
-                        </a>
-                        <Button variant="outline" size="sm">
-                            Contact
-                        </Button>
-                        <Button size="sm">Sign Up</Button>
-                    </div>
                 </nav>
             </header>
 

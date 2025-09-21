@@ -64,42 +64,13 @@ function AnalyzePage() {
             </svg>
             <span className="text-xl font-bold text-gray-900">SpeedX</span>
           </div>
-          <div className="hidden md:flex items-center space-x-6">
-            <a href="/#features" className="text-gray-600 hover:text-gray-900 transition-colors">
-              Features
-            </a>
-            <a href="/#about" className="text-gray-600 hover:text-gray-900 transition-colors">
-              About
-            </a>
-            <button className="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:text-gray-900 transition-colors">
-              Contact
-            </button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              Sign Up
-            </button>
-          </div>
+
         </nav>
       </header>
 
       {/* Hero Section */}
       <main className="container mx-auto px-4 py-8">
-        <div className="text-center max-w-4xl mx-auto mb-12">
-          <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm font-medium mb-6">
-            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            Website Performance Analysis
-          </div>
-
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Analyze Your Website Performance
-          </h1>
-
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Get comprehensive performance insights powered by Google Lighthouse. Discover optimization opportunities and
-            improve your website's speed and user experience.
-          </p>
-        </div>
+        {/* Removed hero section for cleaner look */}
 
         {/* URL Input Section */}
         <div className="max-w-2xl mx-auto mb-12">
@@ -238,28 +209,28 @@ function AnalyzePage() {
                 <div className="bg-white/90 backdrop-blur-sm shadow-xl rounded-lg">
                   <div className="p-8">
                     <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Lighthouse Scores</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                      {Object.entries(performanceData.lighthouseScores).map(([key, value]) => {
-                        if (value === null) return null;
-                        const score = Math.round(value * 100);
-                        const getScoreColor = (score) => {
-                          if (score >= 90) return "from-green-50 to-green-100 text-green-600";
-                          if (score >= 50) return "from-yellow-50 to-yellow-100 text-yellow-600";
-                          return "from-red-50 to-red-100 text-red-600";
-                        };
-
-                        return (
-                          <div
-                            key={key}
-                            className={`bg-gradient-to-br ${getScoreColor(score)} rounded-xl p-6 text-center`}
-                          >
-                            <div className="text-3xl font-bold mb-2">{score}</div>
-                            <div className="text-sm font-medium capitalize">
-                              {key.replace(/([A-Z])/g, " $1").trim()}
-                            </div>
-                          </div>
-                        );
-                      })}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 justify-center">
+                      {/* Performance Score */}
+                      {performanceData.lighthouseScores.performance !== null && (
+                        <div className="bg-yellow-50 rounded-xl p-8 text-center">
+                          <div className="text-3xl font-bold mb-2 text-yellow-700">{Math.round(performanceData.lighthouseScores.performance * 100)}</div>
+                          <div className="text-lg font-medium text-yellow-700">Performance</div>
+                        </div>
+                      )}
+                      {/* FCP Metric */}
+                      {performanceData.metrics?.fcp !== null && (
+                        <div className="bg-blue-50 rounded-xl p-8 text-center">
+                          <div className="text-3xl font-bold mb-2 text-blue-700">{performanceData.metrics.fcp > 1000 ? `${(performanceData.metrics.fcp / 1000).toFixed(1)}s` : `${Math.round(performanceData.metrics.fcp)}ms`}</div>
+                          <div className="text-lg font-medium text-blue-700">FCP</div>
+                        </div>
+                      )}
+                      {/* TTI Metric */}
+                      {performanceData.metrics?.tti !== null && (
+                        <div className="bg-purple-50 rounded-xl p-8 text-center">
+                          <div className="text-3xl font-bold mb-2 text-purple-700">{performanceData.metrics.tti > 1000 ? `${(performanceData.metrics.tti / 1000).toFixed(1)}s` : `${Math.round(performanceData.metrics.tti)}ms`}</div>
+                          <div className="text-lg font-medium text-purple-700">TTI</div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -340,22 +311,7 @@ function AnalyzePage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white/80 backdrop-blur-sm border-t mt-16 py-8">
-        <div className="container mx-auto px-4 text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-              />
-            </svg>
-            <span className="font-bold text-gray-900">SpeedX</span>
-          </div>
-          <p className="text-gray-600">© 2025 Your Name. Analyze and compare website performance.</p>
-        </div>
-      </footer>
+      {/* Footer removed for cleaner look */}
     </div>
   );
 }
