@@ -1,8 +1,11 @@
+
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import LandingPage from './LandingPage';
 import PerformanceChart from './PerformanceChart';
 import axios from 'axios';
 
-const App = () => {
+function AnalyzePage() {
   const [url, setUrl] = useState('');
   const [performanceData, setPerformanceData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -17,10 +20,8 @@ const App = () => {
       alert('Please enter a website URL.');
       return;
     }
-
     setLoading(true);
     setError(null);
-
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3002';
       const response = await axios.post(`${backendUrl}/analyze`, { url });
@@ -40,7 +41,6 @@ const App = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center justify-center">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">SpeedX</h1>
-
       <div className="bg-white p-6 shadow-lg rounded-lg w-full max-w-md">
         <h2 className="text-xl font-semibold mb-4 text-gray-700">Enter Website URL</h2>
         <input
@@ -57,7 +57,6 @@ const App = () => {
           Analyze Performance
         </button>
       </div>
-
       <div className="mt-8 w-full max-w-4xl">
         {loading && <p className="text-gray-600">Loading performance data...</p>}
         {error && <p className="text-red-600">{error}</p>}
@@ -65,6 +64,18 @@ const App = () => {
       </div>
     </div>
   );
-};
+}
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/analyze" element={<AnalyzePage />} />
+        {/* Future: <Route path="/compare" element={<ComparePage />} /> */}
+      </Routes>
+    </Router>
+  );
+}
 
 export default App;

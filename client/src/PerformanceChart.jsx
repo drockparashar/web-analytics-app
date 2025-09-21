@@ -38,6 +38,7 @@ const PerformanceChart = ({ data, scores }) => {
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
   const formatSecondsWithTooltip = (ms) => ms !== null && ms !== undefined ? `${(ms / 1000).toFixed(2)} s` : naTooltip;
+  const formatMsWithTooltip = (ms) => ms !== null && ms !== undefined ? `${ms.toFixed(2)} ms` : naTooltip;
   // Defensive: fallback to empty object if data is undefined
   // Helper to format ms to seconds with 2 decimals
   const formatSeconds = (ms) => ms !== null && ms !== undefined ? `${(ms / 1000).toFixed(2)} s` : 'N/A';
@@ -284,20 +285,20 @@ const PerformanceChart = ({ data, scores }) => {
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">Total Blocking Time</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
-            <Bar data={tbtChartData} options={tbtChartOptions} />
+            <span className="text-lg font-bold">{formatMsWithTooltip(tbt)}</span>
           </div>
           <p className="mt-2 text-gray-600">
-            <strong>Total Blocking Time (TBT):</strong> {formatSecondsWithTooltip(tbt)}. Measures the total amount of time that the main thread was blocked and unable to respond to user input.
+            <strong>Total Blocking Time (TBT):</strong> {formatMsWithTooltip(tbt)}. Measures the total amount of time that the main thread was blocked and unable to respond to user input.
           </p>
         </div>
 
         <div>
           <h3 className="text-xl font-semibold mb-2 text-gray-700">Cumulative Layout Shift</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
-            <Bar data={clsChartData} options={clsChartOptions} />
+            <span className="text-lg font-bold">{formatMsWithTooltip(cls * 1000)}</span>
           </div>
           <p className="mt-2 text-gray-600">
-            <strong>Cumulative Layout Shift (CLS):</strong> {formatNumberWithTooltip(cls)}. Measures the sum of all individual layout shift scores for every unexpected layout shift that occurs during the entire lifespan of the page.
+            <strong>Cumulative Layout Shift (CLS):</strong> {formatMsWithTooltip(cls * 1000)}. Measures the sum of all individual layout shift scores for every unexpected layout shift that occurs during the entire lifespan of the page.
           </p>
         </div>
 
