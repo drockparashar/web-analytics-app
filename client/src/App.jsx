@@ -274,16 +274,35 @@ function AnalyzePage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {Object.entries(performanceData.metrics).map(([key, value]) => {
                       if (value === null) return null;
+                      // Tooltip descriptions for each metric
+                      const metricDescriptions = {
+                        fcp: 'First Contentful Paint: Time until the first text or image is painted.',
+                        lcp: 'Largest Contentful Paint: Time until the largest content element is visible.',
+                        tbt: 'Total Blocking Time: Time the main thread was blocked and unable to respond to input.',
+                        cls: 'Cumulative Layout Shift: Measures visual stability and unexpected layout shifts.',
+                        tti: 'Time to Interactive: Time until the page is fully interactive.',
+                        speedIndex: 'Speed Index: How quickly the contents of a page are visibly populated.',
+                        pageLoadTime: 'Page Load Time: Time when the page is fully loaded and interactive.',
+                        ttfb: 'Time to First Byte: Time until the browser receives the first byte from the server.'
+                      };
+                      const label = key
+                        .replace(/([A-Z])/g, ' $1')
+                        .replace(/-/g, ' ')
+                        .trim();
                       return (
-                        <div key={key} className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6">
+                        <div key={key} className="group bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 relative cursor-pointer">
+                          <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 w-64 bg-gray-900 text-white text-sm rounded-lg px-4 py-2 shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none z-20 transition-all duration-200 whitespace-normal text-center flex flex-col items-center">
+                            <span className="relative">
+                              {metricDescriptions[key] || label}
+                              <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-gray-900"></span>
+                            </span>
+                          </span>
                           <div className="flex items-center justify-between mb-2">
                             <h4 className="font-semibold text-gray-700 capitalize">
-                              {key
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/-/g, " ")
-                                .trim()}
+                              {label}
                             </h4>
                             <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <title>{metricDescriptions[key] || label}</title>
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -293,7 +312,7 @@ function AnalyzePage() {
                             </svg>
                           </div>
                           <div className="text-2xl font-bold text-gray-900">
-                            {typeof value === "number"
+                            {typeof value === 'number'
                               ? value > 1000
                                 ? `${(value / 1000).toFixed(1)}s`
                                 : `${Math.round(value)}ms`
