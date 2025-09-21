@@ -58,27 +58,28 @@ const PerformanceChart = ({ data, scores }) => {
 
   // Scores section
   const renderScores = () => (
-    <div className="mb-8 grid grid-cols-2 md:grid-cols-5 gap-4">
-      {Object.entries(scores || {}).map(([key, value]) => {
-        let color = 'text-gray-800';
-        let bg = 'bg-gray-100';
-        let fontSize = 'text-xl';
-        if (key === 'performance' && value !== null) {
-          if (value >= 0.9) {
-            color = 'text-green-600'; bg = 'bg-green-50'; fontSize = 'text-2xl';
-          } else if (value >= 0.5) {
-            color = 'text-yellow-600'; bg = 'bg-yellow-50'; fontSize = 'text-2xl';
-          } else {
-            color = 'text-red-600'; bg = 'bg-red-50'; fontSize = 'text-2xl';
-          }
-        }
-        return (
-          <div key={key} className={`${bg} p-4 rounded-lg text-center`}>
-            <div className="text-sm text-gray-500 font-semibold mb-1">{key}</div>
-            <div className={`${fontSize} font-bold ${color}`}>{value !== null ? value : 'N/A'}</div>
-          </div>
-        );
-      })}
+    <div className="mb-8 grid grid-cols-2 md:grid-cols-3 gap-4">
+      {/* Only show performance score if not null */}
+      {scores?.performance !== null && (
+        <div className={`p-4 rounded-lg text-center ${scores.performance >= 0.9 ? 'bg-green-50' : scores.performance >= 0.5 ? 'bg-yellow-50' : 'bg-red-50'}`}>
+          <div className="text-sm text-gray-500 font-semibold mb-1">Performance</div>
+          <div className={`text-2xl font-bold ${scores.performance >= 0.9 ? 'text-green-600' : scores.performance >= 0.5 ? 'text-yellow-600' : 'text-red-600'}`}>{scores.performance}</div>
+        </div>
+      )}
+      {/* Show Speed Index */}
+      {data?.speedIndex !== null && (
+        <div className="bg-gray-100 p-4 rounded-lg text-center">
+          <div className="text-sm text-gray-500 font-semibold mb-1">Speed Index</div>
+          <div className="text-xl font-bold text-gray-800">{formatSeconds(data.speedIndex)}</div>
+        </div>
+      )}
+      {/* Show Time to Interactive */}
+      {data?.tti !== null && (
+        <div className="bg-gray-100 p-4 rounded-lg text-center">
+          <div className="text-sm text-gray-500 font-semibold mb-1">TTI</div>
+          <div className="text-xl font-bold text-gray-800">{formatSeconds(data.tti)}</div>
+        </div>
+      )}
     </div>
   );
 
@@ -259,24 +260,24 @@ const PerformanceChart = ({ data, scores }) => {
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Replace with TTFB and FCP cards */}
         <div>
-          <h3 className="text-xl font-semibold mb-2 text-gray-700">Total Request Size</h3>
+          <h3 className="text-xl font-semibold mb-2 text-gray-700">Time to First Byte (TTFB)</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
-            {/* Ensure options variable is defined above and used here */}
-            <Bar data={totalRequestSizeChartData} options={totalRequestSizeChartOptions} />
+            <span className="text-lg font-bold">{formatSecondsWithTooltip(ttfb)}</span>
           </div>
           <p className="mt-2 text-gray-600">
-            <strong>Total Request Size:</strong> {formatBytesWithTooltip(totalRequestSize)}. Represents the total size of all network requests made by the page.
+            <strong>TTFB:</strong> The time it takes for the browser to receive the first byte of response from the server.
           </p>
         </div>
 
         <div>
-          <h3 className="text-xl font-semibold mb-2 text-gray-700">Number of Requests</h3>
+          <h3 className="text-xl font-semibold mb-2 text-gray-700">First Contentful Paint (FCP)</h3>
           <div className="bg-gray-100 p-4 rounded-lg">
-            <Bar data={numberOfRequestsChartData} options={numberOfRequestsChartOptions} />
+            <span className="text-lg font-bold">{formatSecondsWithTooltip(fcp)}</span>
           </div>
           <p className="mt-2 text-gray-600">
-            <strong>Number of Requests:</strong> {formatNumberWithTooltip(numberOfRequests)}. Indicates the total number of network requests made by the page.
+            <strong>FCP:</strong> The time when the first text or image is painted on the screen.
           </p>
         </div>
 
