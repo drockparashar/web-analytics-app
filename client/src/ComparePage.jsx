@@ -8,6 +8,12 @@ export default function ComparePage() {
         { id: 2, url: '', label: 'Website 2', isValid: false }
     ]);
 
+    // Analysis state management
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [analysisResults, setAnalysisResults] = useState([]);
+    const [analysisProgress, setAnalysisProgress] = useState({});
+    const [analysisErrors, setAnalysisErrors] = useState({});
+
     // URL validation function
     const isValidUrl = (string) => {
         try {
@@ -49,6 +55,81 @@ export default function ComparePage() {
 
     // Check if we can compare (at least 2 valid URLs)
     const canCompare = websites.filter(site => site.isValid).length >= 2;
+
+    // Analysis functions
+    const analyzeWebsite = async (website) => {
+        try {
+            setAnalysisProgress(prev => ({ ...prev, [website.id]: 'analyzing' }));
+            setAnalysisErrors(prev => ({ ...prev, [website.id]: null }));
+
+            const response = await fetch('https://web-analytics-app-backend.onrender.com/api/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: website.url }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Analysis failed: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            setAnalysisProgress(prev => ({ ...prev, [website.id]: 'completed' }));
+            return {
+                ...website,
+                results: data,
+                analyzedAt: new Date().toISOString()
+            };
+
+        } catch (error) {
+            console.error(`Error analyzing ${website.url}:`, error);
+            setAnalysisProgress(prev => ({ ...prev, [website.id]: 'error' }));
+            setAnalysisErrors(prev => ({
+                ...prev,
+                [website.id]: error.message || 'Analysis failed'
+            }));
+            return {
+                ...website,
+                results: null,
+                error: error.message || 'Analysis failed',
+                analyzedAt: new Date().toISOString()
+            };
+        }
+    };
+
+    const handleCompareAnalysis = async () => {
+        const validWebsites = websites.filter(site => site.isValid);
+
+        if (validWebsites.length < 2) {
+            return;
+        }
+
+        setIsAnalyzing(true);
+        setAnalysisResults([]);
+        setAnalysisProgress({});
+        setAnalysisErrors({});
+
+        try {
+            // Initialize progress for all websites
+            const initialProgress = {};
+            validWebsites.forEach(website => {
+                initialProgress[website.id] = 'pending';
+            });
+            setAnalysisProgress(initialProgress);
+
+            // Analyze all websites in parallel
+            const analysisPromises = validWebsites.map(website => analyzeWebsite(website));
+            const results = await Promise.all(analysisPromises);
+
+            setAnalysisResults(results);
+        } catch (error) {
+            console.error('Comparison analysis failed:', error);
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100">
@@ -138,10 +219,10 @@ export default function ComparePage() {
                                                     onChange={(e) => handleUrlChange(website.id, e.target.value)}
                                                     placeholder="https://example.com"
                                                     className={`w-full p-4 text-lg border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200 ${website.url === ''
-                                                            ? 'border-gray-200 focus:border-transparent'
-                                                            : website.isValid
-                                                                ? 'border-green-200 bg-green-50'
-                                                                : 'border-red-200 bg-red-50'
+                                                        ? 'border-gray-200 focus:border-transparent'
+                                                        : website.isValid
+                                                            ? 'border-green-200 bg-green-50'
+                                                            : 'border-red-200 bg-red-50'
                                                         }`}
                                                 />
                                                 {/* Validation Icons */}
@@ -194,13 +275,22 @@ export default function ComparePage() {
                                 {/* Compare Button */}
                                 <div className="text-center pt-4">
                                     <button
-                                        disabled={!canCompare}
-                                        className={`px-8 py-4 text-lg rounded-xl font-semibold transition-all duration-200 ${canCompare
-                                                ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl'
-                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        onClick={handleCompareAnalysis}
+                                        disabled={!canCompare || isAnalyzing}
+                                        className={`px-8 py-4 text-lg rounded-xl font-semibold transition-all duration-200 ${canCompare && !isAnalyzing
+                                            ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl'
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                             }`}
                                     >
-                                        {canCompare ? (
+                                        {isAnalyzing ? (
+                                            <div className="flex items-center">
+                                                <svg className="animate-spin h-5 w-5 mr-2 text-white" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Analyzing Websites...
+                                            </div>
+                                        ) : canCompare ? (
                                             <div className="flex items-center">
                                                 <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -212,22 +302,197 @@ export default function ComparePage() {
                                         )}
                                     </button>
                                 </div>
+
+                                {/* Analysis Progress */}
+                                {isAnalyzing && Object.keys(analysisProgress).length > 0 && (
+                                    <div className="mt-6 space-y-3">
+                                        <h4 className="text-lg font-semibold text-gray-900 text-center">Analysis Progress</h4>
+                                        {websites.filter(site => site.isValid).map(website => (
+                                            <div key={website.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                                <div className="flex items-center">
+                                                    <span className="font-medium text-gray-900 mr-3">{website.label}:</span>
+                                                    <span className="text-sm text-gray-600 truncate max-w-xs">{website.url}</span>
+                                                </div>
+                                                <div className="flex items-center">
+                                                    {analysisProgress[website.id] === 'pending' && (
+                                                        <span className="text-sm text-gray-500 bg-gray-200 px-2 py-1 rounded">Pending</span>
+                                                    )}
+                                                    {analysisProgress[website.id] === 'analyzing' && (
+                                                        <div className="flex items-center">
+                                                            <svg className="animate-spin h-4 w-4 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24">
+                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                            <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded">Analyzing...</span>
+                                                        </div>
+                                                    )}
+                                                    {analysisProgress[website.id] === 'completed' && (
+                                                        <div className="flex items-center">
+                                                            <svg className="h-4 w-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                            <span className="text-sm text-green-600 bg-green-100 px-2 py-1 rounded">Completed</span>
+                                                        </div>
+                                                    )}
+                                                    {analysisProgress[website.id] === 'error' && (
+                                                        <div className="flex items-center">
+                                                            <svg className="h-4 w-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                            <span className="text-sm text-red-600 bg-red-100 px-2 py-1 rounded">Error</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Analysis Errors */}
+                                {Object.keys(analysisErrors).length > 0 && (
+                                    <div className="mt-6">
+                                        <h4 className="text-lg font-semibold text-red-600 text-center mb-3">Analysis Errors</h4>
+                                        <div className="space-y-2">
+                                            {Object.entries(analysisErrors).map(([websiteId, error]) => {
+                                                const website = websites.find(w => w.id.toString() === websiteId);
+                                                if (!error || !website) return null;
+                                                return (
+                                                    <div key={websiteId} className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                                                        <div className="flex items-start">
+                                                            <svg className="h-5 w-5 text-red-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            <div>
+                                                                <p className="font-medium text-red-800">{website.label} ({website.url})</p>
+                                                                <p className="text-sm text-red-600 mt-1">{error}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Results Section - Placeholder */}
-                <div className="max-w-6xl mx-auto">
-                    <div className="bg-white/90 backdrop-blur-sm shadow-xl rounded-lg">
-                        <div className="p-8 text-center">
-                            <h3 className="text-2xl font-bold text-gray-900 mb-4">Comparison Results</h3>
-                            <div className="p-8 border-2 border-dashed border-gray-300 rounded-lg">
-                                <p className="text-gray-500">Comparison dashboard will be implemented in upcoming steps</p>
+                {/* Results Section */}
+                {analysisResults.length > 0 && (
+                    <div className="max-w-6xl mx-auto">
+                        <div className="bg-white/90 backdrop-blur-sm shadow-xl rounded-lg">
+                            <div className="p-8">
+                                <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Comparison Results</h3>
+
+                                {/* Results Summary */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                                    {analysisResults.map((result) => (
+                                        <div key={result.id} className="bg-gray-50 rounded-lg p-6">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h4 className="font-bold text-lg text-gray-900">{result.label}</h4>
+                                                {result.results && !result.error && (
+                                                    <div className="flex items-center text-green-600">
+                                                        <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                        <span className="text-sm">Success</span>
+                                                    </div>
+                                                )}
+                                                {result.error && (
+                                                    <div className="flex items-center text-red-600">
+                                                        <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                        <span className="text-sm">Failed</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <p className="text-sm text-gray-600 mb-4 truncate" title={result.url}>{result.url}</p>
+
+                                            {result.results && !result.error ? (
+                                                <div className="space-y-3">
+                                                    {/* Performance Score */}
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-sm text-gray-600">Performance</span>
+                                                        <div className="flex items-center">
+                                                            <div className={`w-12 h-3 rounded-full mr-2 ${result.results.performance >= 90 ? 'bg-green-500' :
+                                                                    result.results.performance >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                                                }`}>
+                                                                <div
+                                                                    className="h-full bg-white rounded-full"
+                                                                    style={{ width: `${100 - result.results.performance}%` }}
+                                                                ></div>
+                                                            </div>
+                                                            <span className="font-medium">{result.results.performance}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Other Core Metrics */}
+                                                    {['accessibility', 'bestPractices', 'seo'].map(metric => (
+                                                        result.results[metric] !== null && (
+                                                            <div key={metric} className="flex justify-between items-center">
+                                                                <span className="text-sm text-gray-600 capitalize">
+                                                                    {metric === 'bestPractices' ? 'Best Practices' : metric}
+                                                                </span>
+                                                                <div className="flex items-center">
+                                                                    <div className={`w-12 h-3 rounded-full mr-2 ${result.results[metric] >= 90 ? 'bg-green-500' :
+                                                                            result.results[metric] >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                                                        }`}>
+                                                                        <div
+                                                                            className="h-full bg-white rounded-full"
+                                                                            style={{ width: `${100 - result.results[metric]}%` }}
+                                                                        ></div>
+                                                                    </div>
+                                                                    <span className="font-medium">{result.results[metric]}</span>
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    ))}
+
+                                                    {/* Load Time */}
+                                                    {result.results.loadTime && (
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="text-sm text-gray-600">Load Time</span>
+                                                            <span className="font-medium">{result.results.loadTime}s</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="text-red-600 text-sm">
+                                                    <p className="font-medium">Analysis Failed</p>
+                                                    <p className="mt-1">{result.error}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Detailed Comparison - Placeholder for Step 4 */}
+                                <div className="border-t pt-6">
+                                    <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg">
+                                        <p className="text-gray-500 text-center">Detailed comparison dashboard will be implemented in Step 4</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                )}
+
+                {/* Placeholder when no results */}
+                {analysisResults.length === 0 && !isAnalyzing && (
+                    <div className="max-w-6xl mx-auto">
+                        <div className="bg-white/90 backdrop-blur-sm shadow-xl rounded-lg">
+                            <div className="p-8 text-center">
+                                <h3 className="text-2xl font-bold text-gray-900 mb-4">Comparison Results</h3>
+                                <div className="p-8 border-2 border-dashed border-gray-300 rounded-lg">
+                                    <p className="text-gray-500">Add websites above and click "Compare Performance" to see results</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Back to Home */}
                 <div className="text-center mt-12">
