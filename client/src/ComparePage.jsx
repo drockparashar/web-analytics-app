@@ -1,5 +1,32 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend,
+    RadialLinearScale,
+    PointElement,
+    LineElement,
+    Filler,
+} from 'chart.js';
+import { Bar, Radar } from 'react-chartjs-2';
+
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend,
+    RadialLinearScale,
+    PointElement,
+    LineElement,
+    Filler
+);
 
 export default function ComparePage() {
     const navigate = useNavigate();
@@ -55,6 +82,143 @@ export default function ComparePage() {
 
     // Check if we can compare (at least 2 valid URLs)
     const canCompare = websites.filter(site => site.isValid).length >= 2;
+
+    // Chart data preparation functions
+    const prepareBarChartData = (results, metric) => {
+        const validResults = results.filter(r => r.results && !r.error && r.results[metric] !== null);
+
+        if (validResults.length === 0) return null;
+
+        const colors = ['rgba(124, 58, 237, 0.8)', 'rgba(59, 130, 246, 0.8)', 'rgba(16, 185, 129, 0.8)'];
+        const borderColors = ['rgb(124, 58, 237)', 'rgb(59, 130, 246)', 'rgb(16, 185, 129)'];
+
+        return {
+            labels: validResults.map(r => r.label),
+            datasets: [
+                {
+                    label: metric.charAt(0).toUpperCase() + metric.slice(1),
+                    data: validResults.map(r => r.results[metric]),
+                    backgroundColor: colors.slice(0, validResults.length),
+                    borderColor: borderColors.slice(0, validResults.length),
+                    borderWidth: 2,
+                    borderRadius: 8,
+                },
+            ],
+        };
+    };
+
+    const prepareRadarChartData = (results) => {
+        const validResults = results.filter(r => r.results && !r.error);
+
+        if (validResults.length === 0) return null;
+
+        const colors = [
+            'rgba(124, 58, 237, 0.6)',
+            'rgba(59, 130, 246, 0.6)',
+            'rgba(16, 185, 129, 0.6)'
+        ];
+        const borderColors = [
+            'rgb(124, 58, 237)',
+            'rgb(59, 130, 246)',
+            'rgb(16, 185, 129)'
+        ];
+
+        const metrics = ['performance', 'accessibility', 'bestPractices', 'seo'];
+        const metricLabels = ['Performance', 'Accessibility', 'Best Practices', 'SEO'];
+
+        return {
+            labels: metricLabels,
+            datasets: validResults.map((result, index) => ({
+                label: result.label,
+                data: metrics.map(metric => result.results[metric] || 0),
+                backgroundColor: colors[index % colors.length],
+                borderColor: borderColors[index % borderColors.length],
+                borderWidth: 2,
+                pointBackgroundColor: borderColors[index % borderColors.length],
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: borderColors[index % borderColors.length],
+            })),
+        };
+    };
+
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+            },
+        },
+    };
+
+    const radarOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+        },
+        scales: {
+            r: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                    stepSize: 20,
+                },
+            },
+        },
+    };
+
+    // Winner determination functions
+    const findWinner = (results, metric) => {
+        const validResults = results.filter(r => r.results && !r.error && r.results[metric] !== null);
+        if (validResults.length === 0) return null;
+
+        return validResults.reduce((best, current) => {
+            if (metric === 'loadTime') {
+                // For load time, lower is better
+                return parseFloat(current.results[metric]) < parseFloat(best.results[metric]) ? current : best;
+            } else {
+                // For other metrics, higher is better
+                return current.results[metric] > best.results[metric] ? current : best;
+            }
+        });
+    };
+
+    const findOverallWinner = (results) => {
+        const validResults = results.filter(r => r.results && !r.error);
+        if (validResults.length === 0) return null;
+
+        return validResults.reduce((best, current) => {
+            const currentAvg = calculateAverageScore(current.results);
+            const bestAvg = calculateAverageScore(best.results);
+            return currentAvg > bestAvg ? current : best;
+        });
+    };
+
+    const calculateAverageScore = (results) => {
+        const metrics = ['performance', 'accessibility', 'bestPractices', 'seo'];
+        const validScores = metrics.filter(metric => results[metric] !== null).map(metric => results[metric]);
+        return validScores.length > 0 ? validScores.reduce((sum, score) => sum + score, 0) / validScores.length : 0;
+    };
+
+    const isWinner = (result, metric, results) => {
+        const winner = findWinner(results, metric);
+        return winner && winner.id === result.id;
+    };
+
+    const isOverallWinner = (result, results) => {
+        const winner = findOverallWinner(results);
+        return winner && winner.id === result.id;
+    };
 
     // Analysis functions
     const analyzeWebsite = async (website) => {
@@ -385,10 +549,75 @@ export default function ComparePage() {
                             <div className="p-8">
                                 <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Comparison Results</h3>
 
+                                {/* Winner Summary */}
+                                <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-lg p-6 mb-8">
+                                    <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                                        <svg className="h-5 w-5 mr-2 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                        </svg>
+                                        Category Winners
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                                        {['performance', 'accessibility', 'bestPractices', 'seo'].map(metric => {
+                                            const winner = findWinner(analysisResults, metric);
+                                            return winner ? (
+                                                <div key={metric} className="flex items-center space-x-2">
+                                                    <span className="font-medium text-gray-600">
+                                                        {metric === 'bestPractices' ? 'Best Practices' : metric.charAt(0).toUpperCase() + metric.slice(1)}:
+                                                    </span>
+                                                    <span className="font-bold text-gray-900">{winner.label}</span>
+                                                    <span className="text-gray-500">({winner.results[metric]})</span>
+                                                </div>
+                                            ) : null;
+                                        })}
+                                        {(() => {
+                                            const loadTimeWinner = findWinner(analysisResults, 'loadTime');
+                                            return loadTimeWinner ? (
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="font-medium text-gray-600">Load Time:</span>
+                                                    <span className="font-bold text-gray-900">{loadTimeWinner.label}</span>
+                                                    <span className="text-gray-500">({loadTimeWinner.results.loadTime}s)</span>
+                                                </div>
+                                            ) : null;
+                                        })()}
+                                    </div>
+                                    {(() => {
+                                        const overallWinner = findOverallWinner(analysisResults);
+                                        return overallWinner ? (
+                                            <div className="mt-4 pt-4 border-t border-yellow-200">
+                                                <div className="flex items-center justify-center space-x-2">
+                                                    <svg className="h-6 w-6 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                                    </svg>
+                                                    <span className="text-lg font-bold text-gray-900">
+                                                        Overall Winner: {overallWinner.label}
+                                                    </span>
+                                                    <span className="text-gray-600">
+                                                        (Avg: {calculateAverageScore(overallWinner.results).toFixed(1)})
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ) : null;
+                                    })()}
+                                </div>
+
                                 {/* Results Summary */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                                     {analysisResults.map((result) => (
-                                        <div key={result.id} className="bg-gray-50 rounded-lg p-6">
+                                        <div key={result.id} className={`rounded-lg p-6 relative ${isOverallWinner(result, analysisResults)
+                                                ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border-2 border-yellow-300 shadow-lg'
+                                                : 'bg-gray-50'
+                                            }`}>
+                                            {/* Overall Winner Badge */}
+                                            {isOverallWinner(result, analysisResults) && (
+                                                <div className="absolute -top-3 -right-3 bg-gradient-to-r from-yellow-400 to-amber-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg flex items-center">
+                                                    <svg className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                                    </svg>
+                                                    Winner
+                                                </div>
+                                            )}
+
                                             <div className="flex items-center justify-between mb-4">
                                                 <h4 className="font-bold text-lg text-gray-900">{result.label}</h4>
                                                 {result.results && !result.error && (
@@ -415,10 +644,20 @@ export default function ComparePage() {
                                                 <div className="space-y-3">
                                                     {/* Performance Score */}
                                                     <div className="flex justify-between items-center">
-                                                        <span className="text-sm text-gray-600">Performance</span>
+                                                        <div className="flex items-center">
+                                                            <span className="text-sm text-gray-600">Performance</span>
+                                                            {isWinner(result, 'performance', analysisResults) && (
+                                                                <div className="ml-2 bg-blue-500 text-white px-2 py-0.5 rounded-full text-xs font-medium flex items-center">
+                                                                    <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                                                    </svg>
+                                                                    Best
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                         <div className="flex items-center">
                                                             <div className={`w-12 h-3 rounded-full mr-2 ${result.results.performance >= 90 ? 'bg-green-500' :
-                                                                    result.results.performance >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                                                result.results.performance >= 50 ? 'bg-yellow-500' : 'bg-red-500'
                                                                 }`}>
                                                                 <div
                                                                     className="h-full bg-white rounded-full"
@@ -433,12 +672,22 @@ export default function ComparePage() {
                                                     {['accessibility', 'bestPractices', 'seo'].map(metric => (
                                                         result.results[metric] !== null && (
                                                             <div key={metric} className="flex justify-between items-center">
-                                                                <span className="text-sm text-gray-600 capitalize">
-                                                                    {metric === 'bestPractices' ? 'Best Practices' : metric}
-                                                                </span>
+                                                                <div className="flex items-center">
+                                                                    <span className="text-sm text-gray-600 capitalize">
+                                                                        {metric === 'bestPractices' ? 'Best Practices' : metric}
+                                                                    </span>
+                                                                    {isWinner(result, metric, analysisResults) && (
+                                                                        <div className="ml-2 bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-medium flex items-center">
+                                                                            <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                                                            </svg>
+                                                                            Best
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                                 <div className="flex items-center">
                                                                     <div className={`w-12 h-3 rounded-full mr-2 ${result.results[metric] >= 90 ? 'bg-green-500' :
-                                                                            result.results[metric] >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                                                        result.results[metric] >= 50 ? 'bg-yellow-500' : 'bg-red-500'
                                                                         }`}>
                                                                         <div
                                                                             className="h-full bg-white rounded-full"
@@ -454,7 +703,17 @@ export default function ComparePage() {
                                                     {/* Load Time */}
                                                     {result.results.loadTime && (
                                                         <div className="flex justify-between items-center">
-                                                            <span className="text-sm text-gray-600">Load Time</span>
+                                                            <div className="flex items-center">
+                                                                <span className="text-sm text-gray-600">Load Time</span>
+                                                                {isWinner(result, 'loadTime', analysisResults) && (
+                                                                    <div className="ml-2 bg-purple-500 text-white px-2 py-0.5 rounded-full text-xs font-medium flex items-center">
+                                                                        <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                                                        </svg>
+                                                                        Fastest
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                             <span className="font-medium">{result.results.loadTime}s</span>
                                                         </div>
                                                     )}
@@ -469,11 +728,104 @@ export default function ComparePage() {
                                     ))}
                                 </div>
 
-                                {/* Detailed Comparison - Placeholder for Step 4 */}
+                                {/* Detailed Comparison Charts */}
                                 <div className="border-t pt-6">
-                                    <div className="p-6 border-2 border-dashed border-gray-300 rounded-lg">
-                                        <p className="text-gray-500 text-center">Detailed comparison dashboard will be implemented in Step 4</p>
+                                    <h4 className="text-xl font-bold text-gray-900 mb-6 text-center">Performance Comparison Charts</h4>
+
+                                    {/* Radar Chart - Overall Performance */}
+                                    {prepareRadarChartData(analysisResults) && (
+                                        <div className="mb-8">
+                                            <div className="bg-gray-50 rounded-lg p-6">
+                                                <h5 className="text-lg font-semibold text-gray-800 mb-4 text-center">Overall Performance Radar</h5>
+                                                <div className="h-80">
+                                                    <Radar data={prepareRadarChartData(analysisResults)} options={radarOptions} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Individual Metric Bar Charts */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Performance Score */}
+                                        {prepareBarChartData(analysisResults, 'performance') && (
+                                            <div className="bg-gray-50 rounded-lg p-6">
+                                                <h5 className="text-lg font-semibold text-gray-800 mb-4 text-center">Performance Score</h5>
+                                                <div className="h-64">
+                                                    <Bar data={prepareBarChartData(analysisResults, 'performance')} options={chartOptions} />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Accessibility Score */}
+                                        {prepareBarChartData(analysisResults, 'accessibility') && (
+                                            <div className="bg-gray-50 rounded-lg p-6">
+                                                <h5 className="text-lg font-semibold text-gray-800 mb-4 text-center">Accessibility Score</h5>
+                                                <div className="h-64">
+                                                    <Bar data={prepareBarChartData(analysisResults, 'accessibility')} options={chartOptions} />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Best Practices Score */}
+                                        {prepareBarChartData(analysisResults, 'bestPractices') && (
+                                            <div className="bg-gray-50 rounded-lg p-6">
+                                                <h5 className="text-lg font-semibold text-gray-800 mb-4 text-center">Best Practices Score</h5>
+                                                <div className="h-64">
+                                                    <Bar data={prepareBarChartData(analysisResults, 'bestPractices')} options={chartOptions} />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* SEO Score */}
+                                        {prepareBarChartData(analysisResults, 'seo') && (
+                                            <div className="bg-gray-50 rounded-lg p-6">
+                                                <h5 className="text-lg font-semibold text-gray-800 mb-4 text-center">SEO Score</h5>
+                                                <div className="h-64">
+                                                    <Bar data={prepareBarChartData(analysisResults, 'seo')} options={chartOptions} />
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
+
+                                    {/* Load Time Comparison */}
+                                    {analysisResults.some(r => r.results && !r.error && r.results.loadTime) && (
+                                        <div className="mt-6">
+                                            <div className="bg-gray-50 rounded-lg p-6">
+                                                <h5 className="text-lg font-semibold text-gray-800 mb-4 text-center">Load Time Comparison</h5>
+                                                <div className="space-y-4">
+                                                    {analysisResults
+                                                        .filter(r => r.results && !r.error && r.results.loadTime)
+                                                        .map((result, index) => {
+                                                            const maxLoadTime = Math.max(...analysisResults
+                                                                .filter(r => r.results && !r.error && r.results.loadTime)
+                                                                .map(r => parseFloat(r.results.loadTime))
+                                                            );
+                                                            const loadTime = parseFloat(result.results.loadTime);
+                                                            const percentage = (loadTime / maxLoadTime) * 100;
+                                                            const colors = ['bg-purple-500', 'bg-blue-500', 'bg-green-500'];
+
+                                                            return (
+                                                                <div key={result.id} className="flex items-center space-x-4">
+                                                                    <div className="w-24 text-sm font-medium text-gray-700">
+                                                                        {result.label}
+                                                                    </div>
+                                                                    <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
+                                                                        <div
+                                                                            className={`h-6 rounded-full ${colors[index % colors.length]} flex items-center justify-end pr-2`}
+                                                                            style={{ width: `${percentage}%` }}
+                                                                        >
+                                                                            <span className="text-white text-xs font-medium">
+                                                                                {result.results.loadTime}s
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
