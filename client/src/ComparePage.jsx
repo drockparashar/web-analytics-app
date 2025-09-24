@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Chart as ChartJS,
@@ -40,6 +40,34 @@ export default function ComparePage() {
     const [analysisResults, setAnalysisResults] = useState([]);
     const [analysisProgress, setAnalysisProgress] = useState({});
     const [analysisErrors, setAnalysisErrors] = useState({});
+
+    // Load shared URLs on component mount
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sharedUrls = [];
+
+        // Check for url1, url2, url3 parameters
+        for (let i = 1; i <= 3; i++) {
+            const url = urlParams.get(`url${i}`);
+            if (url && isValidUrl(url)) {
+                sharedUrls.push({
+                    id: i,
+                    url: url,
+                    label: `Website ${i}`,
+                    isValid: true
+                });
+            }
+        }
+
+        if (sharedUrls.length >= 2) {
+            setWebsites(sharedUrls);
+            // Auto-analyze if we have valid shared URLs
+            setTimeout(() => {
+                const event = { preventDefault: () => { } };
+                handleCompareAnalysis();
+            }, 500);
+        }
+    }, []);
 
     // URL validation function
     const isValidUrl = (string) => {
@@ -218,6 +246,164 @@ export default function ComparePage() {
     const isOverallWinner = (result, results) => {
         const winner = findOverallWinner(results);
         return winner && winner.id === result.id;
+    };
+
+    // Export and sharing functions
+    const generateShareableLink = () => {
+        const validWebsites = websites.filter(site => site.isValid);
+        const urlParams = new URLSearchParams();
+
+        validWebsites.forEach((site, index) => {
+            urlParams.append(`url${index + 1}`, site.url);
+        });
+
+        const shareUrl = `${window.location.origin}${window.location.pathname}?${urlParams.toString()}`;
+
+        navigator.clipboard.writeText(shareUrl).then(() => {
+            alert('Shareable link copied to clipboard!');
+        }).catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = shareUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('Shareable link copied to clipboard!');
+        });
+    };
+
+    const exportToJSON = () => {
+        const exportData = {
+            timestamp: new Date().toISOString(),
+            websites: analysisResults.map(result => ({
+                label: result.label,
+                url: result.url,
+                results: result.results,
+                error: result.error,
+                analyzedAt: result.analyzedAt
+            })),
+            winners: {
+                performance: findWinner(analysisResults, 'performance')?.label,
+                accessibility: findWinner(analysisResults, 'accessibility')?.label,
+                bestPractices: findWinner(analysisResults, 'bestPractices')?.label,
+                seo: findWinner(analysisResults, 'seo')?.label,
+                loadTime: findWinner(analysisResults, 'loadTime')?.label,
+                overall: findOverallWinner(analysisResults)?.label
+            }
+        };
+
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `website-comparison-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
+    const exportToCSV = () => {
+        const csvHeaders = ['Website', 'URL', 'Performance', 'Accessibility', 'Best Practices', 'SEO', 'Load Time', 'Average Score', 'Status'];
+        const csvRows = analysisResults.map(result => [
+            result.label,
+            result.url,
+            result.results?.performance || 'N/A',
+            result.results?.accessibility || 'N/A',
+            result.results?.bestPractices || 'N/A',
+            result.results?.seo || 'N/A',
+            result.results?.loadTime || 'N/A',
+            result.results ? calculateAverageScore(result.results).toFixed(1) : 'N/A',
+            result.error ? 'Failed' : 'Success'
+        ]);
+
+        const csvContent = [csvHeaders, ...csvRows]
+            .map(row => row.map(cell => `"${cell}"`).join(','))
+            .join('\n');
+
+        const dataBlob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(dataBlob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `website-comparison-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
+    const printResults = () => {
+        const printWindow = window.open('', '_blank');
+        const overallWinner = findOverallWinner(analysisResults);
+
+        const printContent = `
+            <html>
+                <head>
+                    <title>Website Performance Comparison Report</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        .winner-section { background: #fef3c7; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+                        .website-card { border: 1px solid #e5e7eb; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+                        .metric { display: flex; justify-content: space-between; margin-bottom: 8px; }
+                        .winner-badge { background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+                        .error { color: #dc2626; }
+                        @media print { body { margin: 0; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Website Performance Comparison Report</h1>
+                        <p>Generated on ${new Date().toLocaleDateString()}</p>
+                    </div>
+                    
+                    ${overallWinner ? `
+                        <div class="winner-section">
+                            <h2>🏆 Overall Winner: ${overallWinner.label}</h2>
+                            <p>Average Score: ${calculateAverageScore(overallWinner.results).toFixed(1)}</p>
+                        </div>
+                    ` : ''}
+                    
+                    ${analysisResults.map(result => `
+                        <div class="website-card">
+                            <h3>${result.label} - ${result.url}</h3>
+                            ${result.error ? `
+                                <p class="error">Analysis Failed: ${result.error}</p>
+                            ` : `
+                                <div class="metric">
+                                    <span>Performance:</span>
+                                    <span>${result.results.performance} ${isWinner(result, 'performance', analysisResults) ? '<span class="winner-badge">Winner</span>' : ''}</span>
+                                </div>
+                                <div class="metric">
+                                    <span>Accessibility:</span>
+                                    <span>${result.results.accessibility || 'N/A'} ${isWinner(result, 'accessibility', analysisResults) ? '<span class="winner-badge">Winner</span>' : ''}</span>
+                                </div>
+                                <div class="metric">
+                                    <span>Best Practices:</span>
+                                    <span>${result.results.bestPractices || 'N/A'} ${isWinner(result, 'bestPractices', analysisResults) ? '<span class="winner-badge">Winner</span>' : ''}</span>
+                                </div>
+                                <div class="metric">
+                                    <span>SEO:</span>
+                                    <span>${result.results.seo || 'N/A'} ${isWinner(result, 'seo', analysisResults) ? '<span class="winner-badge">Winner</span>' : ''}</span>
+                                </div>
+                                <div class="metric">
+                                    <span>Load Time:</span>
+                                    <span>${result.results.loadTime || 'N/A'}${result.results.loadTime ? 's' : ''} ${isWinner(result, 'loadTime', analysisResults) ? '<span class="winner-badge">Fastest</span>' : ''}</span>
+                                </div>
+                            `}
+                        </div>
+                    `).join('')}
+                </body>
+            </html>
+        `;
+
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.print();
     };
 
     // Analysis functions
@@ -605,8 +791,8 @@ export default function ComparePage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                                     {analysisResults.map((result) => (
                                         <div key={result.id} className={`rounded-lg p-6 relative ${isOverallWinner(result, analysisResults)
-                                                ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border-2 border-yellow-300 shadow-lg'
-                                                : 'bg-gray-50'
+                                            ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border-2 border-yellow-300 shadow-lg'
+                                            : 'bg-gray-50'
                                             }`}>
                                             {/* Overall Winner Badge */}
                                             {isOverallWinner(result, analysisResults) && (
@@ -840,6 +1026,74 @@ export default function ComparePage() {
                                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Comparison Results</h3>
                                 <div className="p-8 border-2 border-dashed border-gray-300 rounded-lg">
                                     <p className="text-gray-500">Add websites above and click "Compare Performance" to see results</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Export and Share Controls */}
+                {analysisResults.length > 0 && (
+                    <div className="max-w-4xl mx-auto mt-8">
+                        <div className="bg-white/90 backdrop-blur-sm shadow-xl rounded-lg">
+                            <div className="p-6">
+                                <h4 className="text-lg font-bold text-gray-900 mb-4 text-center flex items-center justify-center">
+                                    <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                                    </svg>
+                                    Export & Share Results
+                                </h4>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    {/* Share Link */}
+                                    <button
+                                        onClick={generateShareableLink}
+                                        className="flex items-center justify-center px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200"
+                                    >
+                                        <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                        </svg>
+                                        Share Link
+                                    </button>
+
+                                    {/* Export JSON */}
+                                    <button
+                                        onClick={exportToJSON}
+                                        className="flex items-center justify-center px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-200"
+                                    >
+                                        <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        Export JSON
+                                    </button>
+
+                                    {/* Export CSV */}
+                                    <button
+                                        onClick={exportToCSV}
+                                        className="flex items-center justify-center px-4 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors duration-200"
+                                    >
+                                        <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        Export CSV
+                                    </button>
+
+                                    {/* Print Report */}
+                                    <button
+                                        onClick={printResults}
+                                        className="flex items-center justify-center px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors duration-200"
+                                    >
+                                        <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                        </svg>
+                                        Print Report
+                                    </button>
+                                </div>
+
+                                <div className="mt-4 text-center">
+                                    <p className="text-sm text-gray-600">
+                                        Share your comparison with others or export data for further analysis
+                                    </p>
                                 </div>
                             </div>
                         </div>
