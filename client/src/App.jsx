@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import LandingPage from './LandingPage';
 import PerformanceChart from './PerformanceChart';
+import ComparePage from './ComparePage';
 import axios from 'axios';
 
 function AnalyzePage() {
@@ -322,7 +323,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/analyze" element={<AnalyzePage />} />
-        {/* Future: <Route path="/compare" element={<ComparePage />} /> */}
+        <Route path="/compare" element={<ComparePage />} />
       </Routes>
     </Router>
   );
